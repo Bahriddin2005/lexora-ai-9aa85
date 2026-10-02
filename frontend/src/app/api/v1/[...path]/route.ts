@@ -82,6 +82,29 @@ async function wordEntry(lang: string, lemma: string): Promise<WordEntry | null>
       }
     } catch { /* online source temporarily unavailable */ }
   }
+  if (!definitions.length && ["uz", "en", "ru", "tr"].includes(lang)) {
+    try {
+      const url = new URL(`https://${lang}.wiktionary.org/w/api.php`);
+      Object.entries({ action: "parse", page: lemma, prop: "wikitext", format: "json" })
+        .forEach(([key, value]) => url.searchParams.set(key, value));
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (response.ok) {
+        const data = await response.json() as { parse?: { wikitext?: { "*"?: string } } };
+        const raw = data.parse?.wikitext?.["*"] ?? "";
+        definitions = raw.split("\n")
+          .filter((line) => /^\s*(?:#+\s*|\d+\s+|:\s*\[\[)/.test(line))
+          .map((line) => line
+            .replace(/^\s*(?:#+\s*|\d+\s+|:\s*)/, "")
+            .replace(/\{\{[^{}]*\}\}/g, "")
+            .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
+            .replace(/'{2,}/g, "")
+            .replace(/<[^>]*>/g, "")
+            .trim())
+          .filter(Boolean)
+          .slice(0, 5);
+      }
+    } catch { /* online source temporarily unavailable */ }
+  }
   const starter = STARTER_WORDS.find(([code, word]) => code === lang && word.toLocaleLowerCase() === lemma.toLocaleLowerCase());
   if (!definitions.length && starter) definitions = [starter[3]];
   if (!definitions.length) return null;

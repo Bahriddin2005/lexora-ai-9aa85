@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const appUrl = process.env.LEXORA_APP_URL ?? "https://lexora-ai.onrender.com";
+const appUrl = process.env.LEXORA_APP_URL ?? "https://stirring-tanuki-48c9f6.netlify.app";
 
 const config: CapacitorConfig = {
   appId: "uz.lexora.app",
